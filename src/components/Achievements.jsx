@@ -17,27 +17,29 @@ function CounterItem({ target, suffix, title }) {
 
   useEffect(() => {
     const obj = { val: 0 };
-
-    const ctx = gsap.context(() => {
-      gsap.to(obj, {
-        val: target,
-        duration: 2.2,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: cardRef.current,
-          start: "top 85%",
-          end: "bottom 15%",
-          toggleActions: "play reverse play reverse"
-        },
-        onUpdate: () => {
-          if (numRef.current) {
-            numRef.current.innerText = Math.floor(obj.val);
+    let tween;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        tween = gsap.to(obj, {
+          val: target,
+          duration: 2.2,
+          ease: "power2.out",
+          onUpdate: () => {
+            if (numRef.current) numRef.current.innerText = Math.floor(obj.val);
           }
-        }
-      });
-    }, cardRef);
+        });
+        observer.disconnect();
+      }
+    }, { threshold: 0.1 });
 
-    return () => ctx.revert();
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+      if (tween) tween.kill();
+    };
   }, [target]);
 
   return (
